@@ -1,12 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Filmofile.ViewModels;
+using Mall.Models;
 
 namespace Mall.ViewModels
 {
     public class StoresViewModel
     {
-        
         public int StoreId { get; set; }
         public int RoomId { get; set; }
         
@@ -15,7 +15,14 @@ namespace Mall.ViewModels
         
         [Display (Name = "Store description")]
         public string StoreDescription { get; set; }
+        
+        [Display(Name = "Rent debt")]
+        public double? RentDebt { get; set; }
 
+        [Display(Name = "Occupied room number")]
+        public virtual Room RoomIdNavigation { get; set; }
+        
+        public List <Product> Products { get; set; }
 
         public string DayOfTheWeek { get; set; }
         public DateTime StartingHour { get; set; }

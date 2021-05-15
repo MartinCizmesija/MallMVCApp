@@ -1,4 +1,4 @@
-﻿@model Mall.Models.Store
+﻿@model Mall.ViewModels.StoresViewModel
 
 @{
     ViewData["Title"] = "Details";
@@ -29,6 +29,47 @@
             @Html.DisplayFor(model => model.RentDebt)
     </dl>
 </div>
+<div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Product name
+                </th>
+                <th>
+                    Price
+                </th>
+                <th>
+                    Description
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in Model.Products)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => product.ProductName)
+                    </td>
+                    <td>
+                        $@Html.DisplayFor(modelItem => product.Price)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => product.ProductDescription)
+                    </td>
+                    <td>
+                        <a asp-controller="Products" asp-action="Edit" asp-route-id="@product.ProductId">Edit</a> |
+                        <a asp-controller="Products" asp-action="Details" asp-route-id="@product.ProductId">Details</a> |
+                        <a asp-controller="Products" asp-action="Delete" asp-route-id="@product.ProductId">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
 <div>
     <a asp-action="Edit" asp-route-id="@Model.StoreId">Edit</a> |
     <a asp-action="Index">Back to List</a>

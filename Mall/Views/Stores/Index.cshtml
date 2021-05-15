@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Mall.ViewModels.StoresViewModel>
+﻿@model Mall.ViewModels.StoresListVeiwModel
 
 @{
     ViewData["Title"] = "Index";
@@ -6,36 +6,55 @@
 
 <h1>Store list</h1>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
+<div>
+    <p>
+        <a asp-action="Create">Create New</a>
+    </p>
+
+    <form asp-action="Index" asp-controller="Stores">
+        <p>
+            <input type="text" name="SearchString" placeholder="Search stores">
+            <input type="submit" value="Go" />
+        </p>
+    </form>
+</div>
+
 <table class="table">
     <thead>
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.StoreName)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.StoreDescription)
-            </th>
+            @{
+                string[] nazivi = { "Store name", "Description" };
+                for (int i = 1; i <= nazivi.Length; i++)
+                {
+                    <th>
+                        <a asp-route-sort="@i"
+                           asp-route-page="@Model.PagingInfo.CurrentPage"
+                           asp-route-ascending="@(Model.PagingInfo.Sort == i ? !Model.PagingInfo.Ascending : true)">
+                            @nazivi[i - 1]
+                        </a>
+                    </th>
+                }
+            }
+            <th></th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.StoreName)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.StoreDescription)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.StoreId">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.StoreId">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.StoreId">Delete</a>
-            </td>
-        </tr>
-}
+        @foreach (var item in Model.Stores)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.StoreName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.StoreDescription)
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.StoreId">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.StoreId">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.StoreId">Delete</a>
+                </td>
+            </tr>
+        }
     </tbody>
 </table>

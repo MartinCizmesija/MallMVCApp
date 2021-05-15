@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Filmofile.ViewModels
+namespace Mall.ViewModels
 {
     public class PagingInfo
     {

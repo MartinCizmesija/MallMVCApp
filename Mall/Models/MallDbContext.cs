@@ -34,7 +34,7 @@ namespace Mall.Models
                 entity.HasKey(e => e.CategoryId);
 
                 entity.Property(e => e.CategoryName).IsRequired();
-                entity.Property(e => e.CategoryDescroption);
+                entity.Property(e => e.CategoryDescription);
             });
 
             modelBuilder.Entity<MallCenter>(entity =>

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Filmofile.ViewModels;
 using Mall.Models;
 using Mall.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -84,7 +83,13 @@ namespace Mall.Controllers
                     .ToList();
             }
 
-            return View(stores);
+            var model = new StoresListVeiwModel
+            {
+                Stores = stores,
+                PagingInfo = pagingInfo
+            };
+
+            return View(model);
         }
 
         // GET: Stores/Details/5
@@ -103,7 +108,17 @@ namespace Mall.Controllers
                 return NotFound();
             }
 
-            return View(store);
+            StoresViewModel model = new StoresViewModel
+            {
+                StoreId = store.StoreId,
+                StoreName = store.StoreName,
+                StoreDescription = store.StoreDescription,
+                RentDebt = store.RentDebt,
+                Products = _context.Product.Where(m => m.StoreId == store.StoreId).ToList()
+                
+            };
+
+            return View(model);
         }
 
         // GET: Stores/Create

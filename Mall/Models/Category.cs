@@ -6,7 +6,7 @@ namespace Mall.Models
     {
         public int CategoryId { get; set; }
         public string CategoryName { get; set; }
-        public string CategoryDescroption { get; set; }
+        public string CategoryDescription { get; set; }
 
         public virtual ICollection<Product_category> Product_Category { get; set; }
     }
