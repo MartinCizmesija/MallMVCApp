@@ -200,6 +200,9 @@ namespace Mall.Controllers
                         throw;
                     }
                 }
+
+                TempData[Constants.Message] = "Product Edited";
+                TempData[Constants.ErrorOccurred] = false;
                 return RedirectToAction(nameof(Index));
             }
             ViewData["StoreId"] = new SelectList(_context.Store, "StoreId", "StoreName", product.StoreId);

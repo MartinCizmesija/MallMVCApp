@@ -1,0 +1,64 @@
+﻿@model Mall.ViewModels.CategoryListViewModel
+
+@{
+    ViewData["Title"] = "View";
+}
+
+<h1>Category list</h1>
+
+<div class="container">
+    <a asp-action="Create">Create New</a>
+
+    <form asp-action="Index" asp-controller="Category">
+        <p>
+            <input type="text" name="SearchString" placeholder="Search category">
+            <input type="submit" value="Go" />
+        </p>
+    </form>
+
+    @if (Model.PagingInfo.TotalItems > 10)
+    {
+        <pager page-info="@Model.PagingInfo" page-action="Index" page-title="Enter page"
+               class="float-right">
+        </pager>
+    }
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            @{
+                string[] nazivi = { "Category name", "Description"};
+                for (int i = 1; i <= nazivi.Length; i++)
+                {
+                    <th>
+                        <a asp-route-sort="@i"
+                           asp-route-page="@Model.PagingInfo.CurrentPage"
+                           asp-route-ascending="@(Model.PagingInfo.Sort == i ? !Model.PagingInfo.Ascending : true)">
+                            @nazivi[i - 1]
+                        </a>
+                    </th>
+                }
+            }
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Categories)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.CategoryName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.CategoryDescription)
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.CategoryId">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@item.CategoryId">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

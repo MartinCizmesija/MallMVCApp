@@ -41,6 +41,7 @@ namespace Mall.Models
             {
                 entity.HasKey(e => e.MallId);
 
+                entity.Property(e => e.MallName).IsRequired();
                 entity.Property(e => e.MallDescription);
             });
 
