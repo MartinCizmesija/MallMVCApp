@@ -9,6 +9,8 @@ namespace Mall.Models
         public int RoomId { get; set; }
         public int MallId { get; set; }
         public double Rent { get; set; }
+
+        [Display (Name = "Availability")]
         public bool IsAvailable { get; set; }
 
         public virtual MallCenter MallIdNavigation {get; set;}

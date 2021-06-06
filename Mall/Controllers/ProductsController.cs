@@ -132,6 +132,7 @@ namespace Mall.Controllers
         // GET: Products/Create
         public IActionResult Create()
         {
+            PrepareDropdownListForCategories();
             ViewData["StoreId"] = new SelectList(_context.Store, "StoreId", "StoreName");
             return View();
         }
@@ -141,8 +142,17 @@ namespace Mall.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ProductId,StoreId,Price,ProductName,ProductDescription")] Product product)
+        public async Task<IActionResult> Create([Bind("ProductId,StoreId,Price,ProductName,ProductDescription")] ProductsViewModel productModel)
         {
+            Product product = new Product
+            {
+                ProductId = productModel.ProductId,
+                StoreId = productModel.StoreId,
+                Price = productModel.Price,
+                ProductName = productModel.ProductName,
+                ProductDescription = productModel.ProductDescription
+            };
+
             if (ModelState.IsValid)
             {
                 _context.Add(product);
@@ -239,6 +249,12 @@ namespace Mall.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        private void PrepareDropdownListForCategories()
+        {
+            var categories = _context.Category.ToList();
+
+            ViewBag.Categories = new SelectList(categories, nameof(Category.CategoryId), nameof(Category.CategoryName));
+        }
         private bool ProductExists(int id)
         {
             return _context.Product.Any(e => e.ProductId == id);

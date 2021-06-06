@@ -11,11 +11,11 @@ using Microsoft.Extensions.Options;
 
 namespace Mall.Controllers
 {
-    public class StoresController : Controller
+    public class RoomsController : Controller
     {
         private readonly MallDbContext _context;
         private readonly AppSettings _appData;
-        public StoresController(MallDbContext context, IOptionsSnapshot<AppSettings> options)
+        public RoomsController(MallDbContext context, IOptionsSnapshot<AppSettings> options)
         {
             _context = context;
             _appData = options.Value;
@@ -26,14 +26,14 @@ namespace Mall.Controllers
         {
             int pagesize = _appData.PageSize;
 
-            var query = _context.Store
+            var query = _context.Room
                         .AsNoTracking();
-            
+
             if (!String.IsNullOrEmpty(searchString))
             {
-                query = query.Where(s => s.StoreName.Contains(searchString));
+                query = query.Where(s => s.RoomId.ToString().Contains(searchString));
             }
-            
+
             int count = query.Count();
             var pagingInfo = new PagingInfo
             {
@@ -48,14 +48,17 @@ namespace Mall.Controllers
                 return RedirectToAction(nameof(Index), new { page = pagingInfo.TotalPages, sort = sort, ascending = ascending });
             }
 
-            System.Linq.Expressions.Expression<Func<Store, object>> orderSelector = null;
+            System.Linq.Expressions.Expression<Func<Room, object>> orderSelector = null;
             switch (sort)
             {
                 case 1:
-                    orderSelector = m => m.StoreName;
+                    orderSelector = m => m.RoomId;
                     break;
                 case 2:
-                    orderSelector = m => m.StoreDescription;
+                    orderSelector = m => m.Rent;
+                    break;
+                case 3:
+                    orderSelector = m => m.IsAvailable;
                     break;
             }
             if (orderSelector != null)
@@ -65,26 +68,26 @@ namespace Mall.Controllers
                        query.OrderByDescending(orderSelector);
             }
 
-            var stores = new List<StoresViewModel>();
+            var rooms = new List<Room>();
 
             if (page != 0)
             {
-                stores = query
-                    .Select(m => new StoresViewModel
+                rooms = query
+                    .Select(m => new Room
                     {
-                        StoreId = m.StoreId,
-                        StoreName = m.StoreName,
-                        StoreDescription = m.StoreDescription,
-                        PagingInfo = pagingInfo
+                        RoomId = m.RoomId,
+                        MallId = m.MallId,
+                        Rent = m.Rent,
+                        IsAvailable = m.IsAvailable
                     })
                     .Skip((page - 1) * pagesize)
                     .Take(pagesize)
                     .ToList();
             }
 
-            var model = new StoresListVeiwModel
+            var model = new RoomsListViewModel
             {
-                Stores = stores,
+                Rooms = rooms,
                 PagingInfo = pagingInfo
             };
 
@@ -99,31 +102,20 @@ namespace Mall.Controllers
                 return NotFound();
             }
 
-            var store = await _context.Store
-                .FirstOrDefaultAsync(m => m.StoreId == id);
+            var room = await _context.Room
+                .FirstOrDefaultAsync(m => m.RoomId == id);
 
-            if (store == null)
+            if (room == null)
             {
                 return NotFound();
             }
 
-            StoresViewModel model = new StoresViewModel
-            {
-                StoreId = store.StoreId,
-                StoreName = store.StoreName,
-                StoreDescription = store.StoreDescription,
-                RentDebt = store.RentDebt,
-                Products = _context.Product.Where(m => m.StoreId == store.StoreId).ToList()
-                
-            };
-
-            return View(model);
+            return View(room);
         }
 
         // GET: Stores/Create
         public IActionResult Create()
         {
-            PrepareDropdownListForRooms();
             return View();
         }
 
@@ -132,21 +124,19 @@ namespace Mall.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Store store)
+        public IActionResult Create(Room room)
         {
+            room.MallId = 1;
+            room.IsAvailable = true;
             if (ModelState.IsValid)
             {
-                Room room = _context.Room.Where(m => m.RoomId == store.RoomId).FirstOrDefault();
-                room.IsAvailable = false;
-
-                _context.Update(room);
-                _context.Add(store);
+                _context.Add(room);
                 _context.SaveChanges();
 
                 return RedirectToAction(nameof(Index));
             }
 
-            return View(store);
+            return View(room);
         }
 
         // GET: Stores/Edit/5
@@ -157,13 +147,13 @@ namespace Mall.Controllers
                 return NotFound();
             }
 
-            var store = await _context.Store.FindAsync(id);
-            if (store == null)
+            var room = await _context.Room.FindAsync(id);
+            if (room == null)
             {
                 return NotFound();
             }
-            ViewData["RoomId"] = new SelectList(_context.Room, "RoomId", "RoomId", store.RoomId);
-            return View(store);
+
+            return View(room);
         }
 
         // POST: Stores/Edit/5
@@ -173,9 +163,9 @@ namespace Mall.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id)
         {
-            Store store = await _context.Store.Where(s => s.StoreId == id).FirstOrDefaultAsync();
+            Room room = await _context.Room.Where(s => s.RoomId == id).FirstOrDefaultAsync();
 
-            if (store == null)
+            if (room == null)
             {
                 return NotFound();
             }
@@ -184,18 +174,18 @@ namespace Mall.Controllers
             {
                 try
                 {
-                    if (await TryUpdateModelAsync(store, "", s => s.StoreId, s => s.RoomId, s => s.StoreName,
-                        s => s.StoreDescription, s => s.RentDebt))
+                    if (await TryUpdateModelAsync(room, "", s => s.RoomId, s => s.MallId, s => s.Rent,
+                        s => s.IsAvailable))
                     {
                         await _context.SaveChangesAsync();
-                        TempData[Constants.Message] = "Store Edited";
+                        TempData[Constants.Message] = "Room Edited";
                         TempData[Constants.ErrorOccurred] = false;
                         return RedirectToAction(nameof(Index));
                     }
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!StoreExists(store.StoreId))
+                    if (!RoomExists(room.RoomId))
                     {
                         return NotFound();
                     }
@@ -206,8 +196,7 @@ namespace Mall.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["RoomId"] = new SelectList(_context.Room, "RoomId", "RoomId", store.RoomId);
-            return View(store);
+            return View(room);
         }
 
         // GET: Stores/Delete/5
@@ -218,15 +207,14 @@ namespace Mall.Controllers
                 return NotFound();
             }
 
-            var store = await _context.Store
-                .Include(s => s.RoomIdNavigation)
-                .FirstOrDefaultAsync(m => m.StoreId == id);
-            if (store == null)
+            var room = await _context.Room
+                .FirstOrDefaultAsync(m => m.RoomId == id);
+            if (room == null)
             {
                 return NotFound();
             }
 
-            return View(store);
+            return View(room);
         }
 
         // POST: Stores/Delete/5
@@ -234,30 +222,15 @@ namespace Mall.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var store = await _context.Store.FindAsync(id);
-            Room room = _context.Room.Where(m => m.RoomId == store.RoomId).FirstOrDefault();
-            room.IsAvailable = true;
-
-            _context.Update(room);
-            _context.Store.Remove(store);
+            var room = await _context.Room.FindAsync(id);
+            _context.Room.Remove(room);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool StoreExists(int id)
+        private bool RoomExists(int id)
         {
-            return _context.Store.Any(e => e.StoreId == id);
-        }
-
-        private void PrepareDropdownListForRooms ()
-        {
-            var rooms = _context.Room
-                .Where(c => c.IsAvailable == true)
-                .OrderBy(g => g.RoomId)
-                .Select(g => new { g.RoomId})
-                .ToList();
-
-            ViewBag.RoomId = new SelectList(rooms, nameof(Room.RoomId), nameof(Room.RoomId));
+            return _context.Room.Any(e => e.RoomId == id);
         }
 
     }

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Mall.Models;
+using Mall.Repositories;
 using Mall.ViewModels;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -13,12 +13,12 @@ namespace Mall.Controllers
 {
     public class CategoryController : Controller
     {
-        private readonly MallDbContext _context;
         private readonly AppSettings _appData;
 
-        public CategoryController(MallDbContext context, IOptionsSnapshot<AppSettings> options)
+        private CategoryRepository repository = new CategoryRepository();
+
+        public CategoryController(IOptionsSnapshot<AppSettings> options)
         {
-            _context = context;
             _appData = options.Value;
         }
 
@@ -27,8 +27,7 @@ namespace Mall.Controllers
         {
             int pagesize = _appData.PageSize;
 
-            var query = _context.Category
-                        .AsNoTracking();
+            var query = repository.GetList();
 
             if (!String.IsNullOrEmpty(searchString))
             {
@@ -92,22 +91,12 @@ namespace Mall.Controllers
         }
 
         // GET: Category/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public IActionResult Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var category = repository.Get(id);
 
-            var category = await _context.Category
-                .FirstOrDefaultAsync(m => m.CategoryId == id);
-
-            if (category == null)
-            {
-                return NotFound();
-            }
-
-            return View(category);
+            if (category == null) return NotFound();
+            else return View(category);
         }
 
         // GET: Category/Create
@@ -123,9 +112,7 @@ namespace Mall.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(category);
-                _context.SaveChanges();
-
+                repository.Add(category);
                 return RedirectToAction(nameof(Index));
             }
 
@@ -134,75 +121,37 @@ namespace Mall.Controllers
 
 
         // GET: Category/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var category = repository.Get(id);
 
-            var category = await _context.Category.FindAsync(id);
-            if (category == null)
-            {
-                return NotFound();
-            }
-            return View(category);
+            if (category == null) return NotFound();
+            else return View(category);
         }
 
         // POST: Category/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id)
+        public IActionResult Edit(Category category)
         {
-            Category category = await _context.Category.Where(s => s.CategoryId == id).FirstOrDefaultAsync();
-
-            if (category == null)
-            {
-                return NotFound();
-            }
-
             if (ModelState.IsValid)
             {
-                try
+                if (repository.Update(category))
                 {
-                    if (await TryUpdateModelAsync(category, "", s => s.CategoryId, s => s.CategoryName, s => s.CategoryDescription))
-                    {
-                        await _context.SaveChangesAsync();
-                        TempData[Constants.Message] = "Category Edited";
-                        TempData[Constants.ErrorOccurred] = false;
-                        return RedirectToAction(nameof(Index));
-                    }
+                    TempData[Constants.Message] = "Category Edited";
+                    TempData[Constants.ErrorOccurred] = false;
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!CategoryExists(category.CategoryId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                else return NotFound();
             }
             return View(category);
         }
 
         // GET: Category/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var category = await _context.Category
-                .FirstOrDefaultAsync(m => m.CategoryId == id);
-            if (category == null)
-            {
-                return NotFound();
-            }
+            Category category = repository.Get(id);
+            if (category == null) return NotFound();
 
             return View(category);
         }
@@ -210,18 +159,10 @@ namespace Mall.Controllers
         // POST: Category/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(Category category)
         {
-            var category = await _context.Category.FindAsync(id);
-            _context.Category.Remove(category);
-            await _context.SaveChangesAsync();
+            repository.Delete(category);
             return RedirectToAction(nameof(Index));
         }
-
-        private bool CategoryExists(int id)
-        {
-            return _context.Category.Any(e => e.CategoryId == id);
-        }
-
     }
 }
