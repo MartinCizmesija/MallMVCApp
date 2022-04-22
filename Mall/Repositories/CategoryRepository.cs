@@ -1,6 +1,7 @@
-﻿using System.Linq;
-using Mall.Models;
+﻿using Mall.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Mall.Repositories
 {
@@ -8,20 +9,26 @@ namespace Mall.Repositories
     {
         private readonly MallDbContext _context;
 
-        public CategoryRepository()
+        public CategoryRepository(MallDbContext context)
         {
-            _context = new MallDbContext();
+            _context = context;
         }
 
         public Category Get (int? id)
         {
             if (id == null) return null;
-            else return _context.Category.Find(id);
+            else return _context.Category.Where(x => x.CategoryId == id).FirstOrDefault();
         }
 
         public IQueryable<Category> GetList()
         {
             return _context.Category.AsNoTracking();
+        }
+
+        public List<Category> GetProductCategories(int? id)
+        {
+            if (id == null) return null;
+            return _context.Category.Where(c => c.Product_Category.Any(m => m.ProductId == id)).ToList();
         }
 
         public void Add(Category category)

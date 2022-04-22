@@ -1,28 +1,22 @@
-﻿using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using Mall.Models;
+﻿using Mall.Models;
+using Mall.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace Mall.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly MallDbContext _context;
-        private readonly ILogger<HomeController> _logger;
+        private readonly HomeRepository _repository;
 
-        public HomeController(ILogger<HomeController> logger, MallDbContext context)
+        public HomeController( HomeRepository repository)
         {
-            _logger = logger;
-            _context = context;
+            _repository = repository;
         }
 
-        public async Task<IActionResult> Index()
+        public  IActionResult Index()
         {
-            int id = 1;
-            MallCenter mall = await _context.Mall.Where(s => s.MallId == id).FirstOrDefaultAsync();
+            var mall =  _repository.Get(1);
             return View(mall);
         }
 

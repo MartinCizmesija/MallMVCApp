@@ -1,41 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Mall.Models;
+﻿using Mall.Models;
+using Mall.Repositories;
 using Mall.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Mall.Controllers
 {
     public class ProductsController : Controller
     {
-        private readonly MallDbContext _context;
+        private readonly ProductsRepository _productsRepo;
+        private readonly CategoryRepository _categoryRepo;
         private readonly AppSettings _appData;
 
-        public ProductsController(MallDbContext context, IOptionsSnapshot<AppSettings> options)
+        //temp
+        private readonly MallDbContext _context;
+
+        public ProductsController(IOptionsSnapshot<AppSettings> options,
+            ProductsRepository productsRepo, CategoryRepository categoryRepo,
+            MallDbContext context)
         {
             _context = context;
+            _productsRepo = productsRepo;
+            _categoryRepo = categoryRepo;
             _appData = options.Value;
         }
 
         // GET: Products
         public IActionResult Index(string searchString, int page = 1, int sort = 1, bool ascending = true)
         {
-            int pagesize = _appData.PageSize;
+            var query = _productsRepo.GetList();
 
-            var query = _context.Product
-                        .AsNoTracking();
-
-            if (!String.IsNullOrEmpty(searchString))
+            if (!string.IsNullOrEmpty(searchString))
             {
                 query = query.Where(s => s.ProductName.Contains(searchString));
             }
 
             int count = query.Count();
+            int pagesize = _appData.PageSize;
+
             var pagingInfo = new PagingInfo
             {
                 CurrentPage = page,
@@ -101,21 +108,20 @@ namespace Mall.Controllers
         }
 
         // GET: Products/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public IActionResult Details(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var product = await _context.Product
-                .Include(p => p.StoreIdNavigation)
-                .FirstOrDefaultAsync(m => m.ProductId == id);
+            var product = _productsRepo.GetWithNavigation(id);
             if (product == null)
             {
                 return NotFound();
             }
 
+            var categories = _categoryRepo.GetProductCategories(id);
             var model = new ProductsViewModel
             {
                 ProductId = product.ProductId,
@@ -123,7 +129,7 @@ namespace Mall.Controllers
                 ProductName = product.ProductName,
                 ProductDescription = product.ProductDescription,
                 StoreName = product.StoreIdNavigation.StoreName,
-                Categories = _context.Category.Where(c => c.Product_Category.Any(m => m.ProductId == id)).ToList()
+                Categories = categories
             };
 
             return View(model);
@@ -155,8 +161,7 @@ namespace Mall.Controllers
 
             if (ModelState.IsValid)
             {
-                _context.Add(product);
-                await _context.SaveChangesAsync();
+                _productsRepo.Add(product);
                 return RedirectToAction(nameof(Index));
             }
             ViewData["StoreId"] = new SelectList(_context.Store, "StoreId", "StoreName", product.StoreId);
@@ -164,14 +169,9 @@ namespace Mall.Controllers
         }
 
         // GET: Products/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var product = await _context.Product.FindAsync(id);
+            var product = _productsRepo.Get(id);
             if (product == null)
             {
                 return NotFound();
@@ -185,51 +185,32 @@ namespace Mall.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ProductId,StoreId,Price,ProductName,ProductDescription")] Product product)
+        public IActionResult Edit(int id, [Bind("ProductId,StoreId,Price,ProductName,ProductDescription")] Product product)
         {
             if (id != product.ProductId)
             {
                 return NotFound();
             }
 
-            if (ModelState.IsValid)
+            var productUpdated = _productsRepo.Update(product);
+            if (!productUpdated)
             {
-                try
-                {
-                    _context.Update(product);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ProductExists(product.ProductId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-
-                TempData[Constants.Message] = "Product Edited";
-                TempData[Constants.ErrorOccurred] = false;
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
+
+            TempData[Constants.Message] = "Product Edited";
+            TempData[Constants.ErrorOccurred] = false;
+            return RedirectToAction(nameof(Index));
+
             ViewData["StoreId"] = new SelectList(_context.Store, "StoreId", "StoreName", product.StoreId);
             return View(product);
         }
 
         // GET: Products/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var product = _productsRepo.GetWithNavigation(id);
 
-            var product = await _context.Product
-                .Include(p => p.StoreIdNavigation)
-                .FirstOrDefaultAsync(m => m.ProductId == id);
             if (product == null)
             {
                 return NotFound();
@@ -241,23 +222,18 @@ namespace Mall.Controllers
         // POST: Products/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
-            var product = await _context.Product.FindAsync(id);
-            _context.Product.Remove(product);
-            await _context.SaveChangesAsync();
+            var product = _productsRepo.Get(id);
+            _productsRepo.Delete(product);
             return RedirectToAction(nameof(Index));
         }
 
         private void PrepareDropdownListForCategories()
         {
-            var categories = _context.Category.ToList();
+            var categories = _categoryRepo.GetList();
 
             ViewBag.Categories = new SelectList(categories, nameof(Category.CategoryId), nameof(Category.CategoryName));
-        }
-        private bool ProductExists(int id)
-        {
-            return _context.Product.Any(e => e.ProductId == id);
         }
     }
 }

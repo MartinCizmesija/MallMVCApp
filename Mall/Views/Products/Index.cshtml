@@ -6,20 +6,21 @@
 
 <h1>Product list</h1>
 
-<div class="container">
-    <a asp-action="Create">Create New</a>
+<div class="container flex-justify-between-center">
+    <div>
+        <a asp-action="Create">Create New</a>
 
-    <form asp-action="Index" asp-controller="Products">
-        <p>
-            <input type="text" name="SearchString" placeholder="Search product">
-            <input type="submit" value="Go" />
-        </p>
-    </form>
+        <form asp-action="Index" asp-controller="Products">
+            <p>
+                <input type="text" name="SearchString" placeholder="Search product">
+                <input type="submit" value="Go" />
+            </p>
+        </form>
+    </div>
 
     @if (Model.PagingInfo.TotalItems > 10)
     {
-        <pager page-info="@Model.PagingInfo" page-action="Index" page-title="Enter page"
-               class="float-right">
+        <pager page-info="@Model.PagingInfo" page-action="Index" page-title="Enter page">
         </pager>
     }
 </div>
@@ -28,13 +29,13 @@
     <thead>
         <tr>
             @{
-                string[] nazivi = { "Product name", "Price", "Description", "Where to find"};
+                string[] nazivi = { "Product name", "Price", "Description", "Where to find" };
                 for (int i = 1; i <= nazivi.Length; i++)
                 {
                     <th>
                         <a asp-route-sort="@i"
-                           asp-route-page="@Model.PagingInfo.CurrentPage"
-                           asp-route-ascending="@(Model.PagingInfo.Sort == i ? !Model.PagingInfo.Ascending : true)">
+                   asp-route-page="@Model.PagingInfo.CurrentPage"
+                   asp-route-ascending="@(Model.PagingInfo.Sort == i ? !Model.PagingInfo.Ascending : true)">
                             @nazivi[i - 1]
                         </a>
                     </th>

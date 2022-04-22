@@ -1,40 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Mall.Factories;
 using Mall.Models;
 using Mall.Repositories;
 using Mall.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Mall.Controllers
 {
     public class CategoryController : Controller
     {
         private readonly AppSettings _appData;
-
-        private CategoryRepository repository = new CategoryRepository();
-
-        public CategoryController(IOptionsSnapshot<AppSettings> options)
+        private readonly CategoryRepository _repository;
+        private readonly ViewModelsFactory _viewModelsFactory;
+        
+        public CategoryController(IOptionsSnapshot<AppSettings> options,
+            CategoryRepository repository, ViewModelsFactory viewModelsFactory)
         {
+            _repository = repository;
             _appData = options.Value;
+            _viewModelsFactory = viewModelsFactory;
         }
 
         // GET: Categories
         public IActionResult Index(string searchString, int page = 1, int sort = 1, bool ascending = true)
         {
-            int pagesize = _appData.PageSize;
+            var query = _repository.GetList();
 
-            var query = repository.GetList();
-
-            if (!String.IsNullOrEmpty(searchString))
+            if (!string.IsNullOrEmpty(searchString))
             {
                 query = query.Where(s => s.CategoryName.Contains(searchString));
             }
 
             int count = query.Count();
+            int pagesize = _appData.PageSize;
+
             var pagingInfo = new PagingInfo
             {
                 CurrentPage = page,
@@ -81,11 +83,7 @@ namespace Mall.Controllers
                     .ToList();
             }
 
-            var model = new CategoryListViewModel
-            {
-                Categories = categories,
-                PagingInfo = pagingInfo
-            };
+            var model = _viewModelsFactory.CreateCategoryList(categories, pagingInfo);
 
             return View(model);
         }
@@ -93,7 +91,7 @@ namespace Mall.Controllers
         // GET: Category/Details/5
         public IActionResult Details(int? id)
         {
-            var category = repository.Get(id);
+            var category = _repository.Get(id);
 
             if (category == null) return NotFound();
             else return View(category);
@@ -112,7 +110,7 @@ namespace Mall.Controllers
         {
             if (ModelState.IsValid)
             {
-                repository.Add(category);
+                _repository.Add(category);
                 return RedirectToAction(nameof(Index));
             }
 
@@ -123,7 +121,7 @@ namespace Mall.Controllers
         // GET: Category/Edit/5
         public IActionResult Edit(int? id)
         {
-            var category = repository.Get(id);
+            var category = _repository.Get(id);
 
             if (category == null) return NotFound();
             else return View(category);
@@ -136,7 +134,7 @@ namespace Mall.Controllers
         {
             if (ModelState.IsValid)
             {
-                if (repository.Update(category))
+                if (_repository.Update(category))
                 {
                     TempData[Constants.Message] = "Category Edited";
                     TempData[Constants.ErrorOccurred] = false;
@@ -150,7 +148,7 @@ namespace Mall.Controllers
         // GET: Category/Delete/5
         public IActionResult Delete(int? id)
         {
-            Category category = repository.Get(id);
+            Category category = _repository.Get(id);
             if (category == null) return NotFound();
 
             return View(category);
@@ -161,7 +159,7 @@ namespace Mall.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(Category category)
         {
-            repository.Delete(category);
+            _repository.Delete(category);
             return RedirectToAction(nameof(Index));
         }
     }

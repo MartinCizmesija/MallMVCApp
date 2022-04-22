@@ -1,0 +1,25 @@
+﻿h1 {
+    margin-bottom: 1rem;
+}
+
+.flex-justify-between-center {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0px;
+}
+
+.flex-justify-between nav, ul {
+    margin: 0;
+}
+
+.pagination li,
+.pagination input {
+    max-width: 35px;
+}
+
+    .pagination > li a,
+    .pagination > input a {
+        text-align: center;
+    }
