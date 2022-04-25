@@ -4,7 +4,7 @@ namespace Mall.ViewModels
 {
     public class ProductsListViewModel
     {
-        public IEnumerable<ProductsViewModel> Products { get; set; }
+        public IEnumerable<ProductViewModel> Products { get; set; }
         public PagingInfo PagingInfo { get; set; }
     }
 }

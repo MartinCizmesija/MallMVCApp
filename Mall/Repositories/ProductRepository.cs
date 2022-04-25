@@ -4,11 +4,11 @@ using System.Linq;
 
 namespace Mall.Repositories
 {
-    public class ProductsRepository
+    public class ProductRepository
     {
         private readonly MallDbContext _context;
 
-        public ProductsRepository(MallDbContext context)
+        public ProductRepository(MallDbContext context)
         {
             _context = context;
         }

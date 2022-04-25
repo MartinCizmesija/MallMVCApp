@@ -1,4 +1,5 @@
-﻿using Mall.Models;
+﻿using Mall.Factories;
+using Mall.Models;
 using Mall.Repositories;
 using Mall.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -7,27 +8,33 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Mall.Controllers
 {
     public class ProductsController : Controller
     {
-        private readonly ProductsRepository _productsRepo;
+        private readonly ProductRepository _productsRepo;
         private readonly CategoryRepository _categoryRepo;
+        private readonly StoreRepository _storesRepo;
+        private readonly ViewModelFactory _viewModelsFactory;
+        private readonly ModelFactory _modelFactory;
         private readonly AppSettings _appData;
 
-        //temp
-        private readonly MallDbContext _context;
+        private readonly IEnumerable<Store> storeList;
 
         public ProductsController(IOptionsSnapshot<AppSettings> options,
-            ProductsRepository productsRepo, CategoryRepository categoryRepo,
-            MallDbContext context)
+            ProductRepository productsRepo, CategoryRepository categoryRepo,
+            StoreRepository storesRepo, ViewModelFactory viewModelsFactory,
+            ModelFactory modelFactory)
         {
-            _context = context;
             _productsRepo = productsRepo;
             _categoryRepo = categoryRepo;
+            _storesRepo = storesRepo;
+            _viewModelsFactory = viewModelsFactory;
+            _modelFactory = modelFactory;
             _appData = options.Value;
+
+            storeList = _storesRepo.GetList();
         }
 
         // GET: Products
@@ -79,12 +86,12 @@ namespace Mall.Controllers
                        query.OrderByDescending(orderSelector);
             }
 
-            var products = new List<ProductsViewModel>();
+            var products = new List<ProductViewModel>();
 
             if (page != 0)
             {
                 products = query
-                    .Select(m => new ProductsViewModel
+                    .Select(m => new ProductViewModel
                     {
                         ProductId = m.ProductId,
                         Price = m.Price,
@@ -98,12 +105,7 @@ namespace Mall.Controllers
                     .ToList();
             }
 
-            var model = new ProductsListViewModel
-            {
-                Products = products,
-                PagingInfo = pagingInfo
-            };
-
+            var model = _viewModelsFactory.CreateProductList(products, pagingInfo);
             return View(model);
         }
 
@@ -122,15 +124,8 @@ namespace Mall.Controllers
             }
 
             var categories = _categoryRepo.GetProductCategories(id);
-            var model = new ProductsViewModel
-            {
-                ProductId = product.ProductId,
-                Price = product.Price,
-                ProductName = product.ProductName,
-                ProductDescription = product.ProductDescription,
-                StoreName = product.StoreIdNavigation.StoreName,
-                Categories = categories
-            };
+
+            var model = _viewModelsFactory.CreateProduct(product, categories);
 
             return View(model);
         }
@@ -139,32 +134,22 @@ namespace Mall.Controllers
         public IActionResult Create()
         {
             PrepareDropdownListForCategories();
-            ViewData["StoreId"] = new SelectList(_context.Store, "StoreId", "StoreName");
+            ViewData["StoreId"] = new SelectList(storeList, "StoreId", "StoreName");
             return View();
         }
 
-        // POST: Products/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ProductId,StoreId,Price,ProductName,ProductDescription")] ProductsViewModel productModel)
+        public IActionResult Create([Bind("ProductId,StoreId,Price,ProductName,ProductDescription")] ProductViewModel productModel)
         {
-            Product product = new Product
-            {
-                ProductId = productModel.ProductId,
-                StoreId = productModel.StoreId,
-                Price = productModel.Price,
-                ProductName = productModel.ProductName,
-                ProductDescription = productModel.ProductDescription
-            };
+            var product = _modelFactory.CreateProduct(productModel);
 
             if (ModelState.IsValid)
             {
                 _productsRepo.Add(product);
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["StoreId"] = new SelectList(_context.Store, "StoreId", "StoreName", product.StoreId);
+            ViewData["StoreId"] = new SelectList(storeList, "StoreId", "StoreName", product.StoreId);
             return View(product);
         }
 
@@ -176,13 +161,11 @@ namespace Mall.Controllers
             {
                 return NotFound();
             }
-            ViewData["StoreId"] = new SelectList(_context.Store, "StoreId", "StoreName", product.StoreId);
+            ViewData["StoreId"] = new SelectList(storeList, "StoreId", "StoreName", product.StoreId);
             return View(product);
         }
 
         // POST: Products/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, [Bind("ProductId,StoreId,Price,ProductName,ProductDescription")] Product product)
@@ -201,9 +184,6 @@ namespace Mall.Controllers
             TempData[Constants.Message] = "Product Edited";
             TempData[Constants.ErrorOccurred] = false;
             return RedirectToAction(nameof(Index));
-
-            ViewData["StoreId"] = new SelectList(_context.Store, "StoreId", "StoreName", product.StoreId);
-            return View(product);
         }
 
         // GET: Products/Delete/5

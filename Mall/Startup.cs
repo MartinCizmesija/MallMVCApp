@@ -30,10 +30,12 @@ namespace Mall
                 options => options.UseSqlServer(
                     Configuration.GetConnectionString("MallDb")));
 
-            services.AddScoped<ViewModelsFactory>();
+            services.AddScoped<ViewModelFactory>();
+            services.AddScoped<ModelFactory>();
             services.AddScoped<CategoryRepository>();
             services.AddScoped<HomeRepository>();
-            services.AddScoped<ProductsRepository>();
+            services.AddScoped<ProductRepository>();
+            services.AddScoped<StoreRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

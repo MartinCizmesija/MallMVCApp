@@ -4,7 +4,7 @@ using Mall.Models;
 
 namespace Mall.ViewModels
 {
-    public class ProductsViewModel
+    public class ProductViewModel
     {
         public int ProductId { get; set; }
 

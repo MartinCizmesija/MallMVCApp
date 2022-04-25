@@ -14,10 +14,10 @@ namespace Mall.Controllers
     {
         private readonly AppSettings _appData;
         private readonly CategoryRepository _repository;
-        private readonly ViewModelsFactory _viewModelsFactory;
+        private readonly ViewModelFactory _viewModelsFactory;
         
         public CategoryController(IOptionsSnapshot<AppSettings> options,
-            CategoryRepository repository, ViewModelsFactory viewModelsFactory)
+            CategoryRepository repository, ViewModelFactory viewModelsFactory)
         {
             _repository = repository;
             _appData = options.Value;
