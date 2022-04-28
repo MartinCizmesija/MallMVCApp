@@ -1,40 +1,43 @@
-﻿using System;
+﻿using Mall.Factories;
+using Mall.Models;
+using Mall.Repositories;
+using Mall.ViewModels;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Mall.Models;
-using Mall.ViewModels;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Mall.Controllers
 {
     public class RoomsController : Controller
     {
-        private readonly MallDbContext _context;
+        private readonly RoomRepository _roomRepository;
+        private readonly ViewModelFactory _viewModelFactory;
         private readonly AppSettings _appData;
-        public RoomsController(MallDbContext context, IOptionsSnapshot<AppSettings> options)
+        public RoomsController(IOptionsSnapshot<AppSettings> options,
+            RoomRepository roomRepository, ViewModelFactory viewModelFactory)
         {
-            _context = context;
             _appData = options.Value;
+            _roomRepository = roomRepository;
+            _viewModelFactory = viewModelFactory;
         }
 
         //GET: Stores
         public IActionResult Index(string searchString, int page = 1, int sort = 1, bool ascending = true)
         {
-            int pagesize = _appData.PageSize;
+            var query = _roomRepository.GetList();
 
-            var query = _context.Room
-                        .AsNoTracking();
-
-            if (!String.IsNullOrEmpty(searchString))
+            if (!string.IsNullOrEmpty(searchString))
             {
                 query = query.Where(s => s.RoomId.ToString().Contains(searchString));
             }
 
             int count = query.Count();
+            int pagesize = _appData.PageSize;
+
             var pagingInfo = new PagingInfo
             {
                 CurrentPage = page,
@@ -85,25 +88,20 @@ namespace Mall.Controllers
                     .ToList();
             }
 
-            var model = new RoomsListViewModel
-            {
-                Rooms = rooms,
-                PagingInfo = pagingInfo
-            };
+            var model = _viewModelFactory.CreateRoomList(rooms, pagingInfo);
 
             return View(model);
         }
 
         // GET: Stores/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public IActionResult Details(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var room = await _context.Room
-                .FirstOrDefaultAsync(m => m.RoomId == id);
+            var room = _roomRepository.Get(id);
 
             if (room == null)
             {
@@ -119,9 +117,6 @@ namespace Mall.Controllers
             return View();
         }
 
-        // POST: Stores/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(Room room)
@@ -130,8 +125,7 @@ namespace Mall.Controllers
             room.IsAvailable = true;
             if (ModelState.IsValid)
             {
-                _context.Add(room);
-                _context.SaveChanges();
+                _roomRepository.Add(room);
 
                 return RedirectToAction(nameof(Index));
             }
@@ -140,14 +134,9 @@ namespace Mall.Controllers
         }
 
         // GET: Stores/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var room = await _context.Room.FindAsync(id);
+            var room = _roomRepository.Get(id);
             if (room == null)
             {
                 return NotFound();
@@ -156,15 +145,10 @@ namespace Mall.Controllers
             return View(room);
         }
 
-        // POST: Stores/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id)
+        public IActionResult Edit(Room room)
         {
-            Room room = await _context.Room.Where(s => s.RoomId == id).FirstOrDefaultAsync();
-
             if (room == null)
             {
                 return NotFound();
@@ -174,10 +158,8 @@ namespace Mall.Controllers
             {
                 try
                 {
-                    if (await TryUpdateModelAsync(room, "", s => s.RoomId, s => s.MallId, s => s.Rent,
-                        s => s.IsAvailable))
+                    if (_roomRepository.Update(room))
                     {
-                        await _context.SaveChangesAsync();
                         TempData[Constants.Message] = "Room Edited";
                         TempData[Constants.ErrorOccurred] = false;
                         return RedirectToAction(nameof(Index));
@@ -185,14 +167,7 @@ namespace Mall.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!RoomExists(room.RoomId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    throw;
                 }
                 return RedirectToAction(nameof(Index));
             }
@@ -200,15 +175,9 @@ namespace Mall.Controllers
         }
 
         // GET: Stores/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var room = await _context.Room
-                .FirstOrDefaultAsync(m => m.RoomId == id);
+            var room = _roomRepository.Get(id);
             if (room == null)
             {
                 return NotFound();
@@ -220,18 +189,11 @@ namespace Mall.Controllers
         // POST: Stores/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
-            var room = await _context.Room.FindAsync(id);
-            _context.Room.Remove(room);
-            await _context.SaveChangesAsync();
+            var room = _roomRepository.Get(id);
+            _roomRepository.Delete(room);
             return RedirectToAction(nameof(Index));
         }
-
-        private bool RoomExists(int id)
-        {
-            return _context.Room.Any(e => e.RoomId == id);
-        }
-
     }
 }

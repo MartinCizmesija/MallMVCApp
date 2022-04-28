@@ -36,6 +36,7 @@ namespace Mall
             services.AddScoped<HomeRepository>();
             services.AddScoped<ProductRepository>();
             services.AddScoped<StoreRepository>();
+            services.AddScoped<RoomRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

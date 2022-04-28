@@ -40,6 +40,16 @@ namespace Mall.Factories
             };
         }
 
+        public RoomsListViewModel CreateRoomList (List<Room> rooms, PagingInfo pagingInfo)
+        {
+            return new RoomsListViewModel()
+            {
+                PagingInfo = pagingInfo,
+                Rooms = rooms
+            };
+        }
+
+
     }
 }
 
