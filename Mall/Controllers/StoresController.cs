@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Mall.Factories;
 using Mall.Models;
+using Mall.Repositories;
 using Mall.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -13,28 +15,41 @@ namespace Mall.Controllers
 {
     public class StoresController : Controller
     {
-        private readonly MallDbContext _context;
+        private readonly MallDbContext _contextt;
+        private readonly RoomRepository _roomRepository;
+        private readonly StoreRepository _storeRepository;
+        private readonly ProductRepository _productRepository;
+        private readonly ViewModelFactory _viewModelFactoy;
         private readonly AppSettings _appData;
-        public StoresController(MallDbContext context, IOptionsSnapshot<AppSettings> options)
+
+        private IEnumerable<Room> roomList;
+        public StoresController(MallDbContext context, IOptionsSnapshot<AppSettings> options,
+            StoreRepository storeRepository, ProductRepository productRepository,
+            RoomRepository roomRepository, ViewModelFactory viewModelFactory)
         {
-            _context = context;
+            _contextt = context;
+            _roomRepository = roomRepository;
+            _storeRepository = storeRepository;
+            _productRepository = productRepository;
+            _viewModelFactoy = viewModelFactory;
             _appData = options.Value;
+
+            roomList = _roomRepository.GetList();
         }
 
         //GET: Stores
         public IActionResult Index(string searchString, int page = 1, int sort = 1, bool ascending = true)
         {
-            int pagesize = _appData.PageSize;
 
-            var query = _context.Store
-                        .AsNoTracking();
-            
-            if (!String.IsNullOrEmpty(searchString))
+            var query = _storeRepository.GetList();
+            int count = query.Count();
+
+            if (!string.IsNullOrEmpty(searchString))
             {
                 query = query.Where(s => s.StoreName.Contains(searchString));
             }
-            
-            int count = query.Count();
+
+            int pagesize = _appData.PageSize;
             var pagingInfo = new PagingInfo
             {
                 CurrentPage = page,
@@ -65,12 +80,12 @@ namespace Mall.Controllers
                        query.OrderByDescending(orderSelector);
             }
 
-            var stores = new List<StoresViewModel>();
+            var stores = new List<StoreViewModel>();
 
             if (page != 0)
             {
                 stores = query
-                    .Select(m => new StoresViewModel
+                    .Select(m => new StoreViewModel
                     {
                         StoreId = m.StoreId,
                         StoreName = m.StoreName,
@@ -82,40 +97,24 @@ namespace Mall.Controllers
                     .ToList();
             }
 
-            var model = new StoresListVeiwModel
-            {
-                Stores = stores,
-                PagingInfo = pagingInfo
-            };
+            var model = _viewModelFactoy.CreateStoreList(stores, pagingInfo);
 
             return View(model);
         }
 
         // GET: Stores/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public IActionResult Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var store = await _context.Store
-                .FirstOrDefaultAsync(m => m.StoreId == id);
+            var store = _storeRepository.Get(id);
 
             if (store == null)
             {
                 return NotFound();
             }
 
-            StoresViewModel model = new StoresViewModel
-            {
-                StoreId = store.StoreId,
-                StoreName = store.StoreName,
-                StoreDescription = store.StoreDescription,
-                RentDebt = store.RentDebt,
-                Products = _context.Product.Where(m => m.StoreId == store.StoreId).ToList()
-                
-            };
+            var products = _productRepository.GetProductsOfStore(store.StoreId);
+
+            var model = _viewModelFactoy.CreateStore(store, products);
 
             return View(model);
         }
@@ -128,20 +127,17 @@ namespace Mall.Controllers
         }
 
         // POST: Stores/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(Store store)
         {
             if (ModelState.IsValid)
             {
-                Room room = _context.Room.Where(m => m.RoomId == store.RoomId).FirstOrDefault();
+                var room = _roomRepository.Get(store.RoomId);
                 room.IsAvailable = false;
 
-                _context.Update(room);
-                _context.Add(store);
-                _context.SaveChanges();
+                _roomRepository.Update(room);
+                _storeRepository.Add(store);
 
                 return RedirectToAction(nameof(Index));
             }
@@ -150,31 +146,23 @@ namespace Mall.Controllers
         }
 
         // GET: Stores/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public IActionResult Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var store = await _context.Store.FindAsync(id);
+            var store = _storeRepository.Get(id);
             if (store == null)
             {
                 return NotFound();
             }
-            ViewData["RoomId"] = new SelectList(_context.Room, "RoomId", "RoomId", store.RoomId);
+
+            ViewData["RoomId"] = new SelectList(roomList, "RoomId", "RoomId", store.RoomId);
             return View(store);
         }
 
         // POST: Stores/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id)
+        public IActionResult Edit(Store store)
         {
-            Store store = await _context.Store.Where(s => s.StoreId == id).FirstOrDefaultAsync();
-
             if (store == null)
             {
                 return NotFound();
@@ -184,10 +172,8 @@ namespace Mall.Controllers
             {
                 try
                 {
-                    if (await TryUpdateModelAsync(store, "", s => s.StoreId, s => s.RoomId, s => s.StoreName,
-                        s => s.StoreDescription, s => s.RentDebt))
+                    if (_storeRepository.Update(store))
                     {
-                        await _context.SaveChangesAsync();
                         TempData[Constants.Message] = "Store Edited";
                         TempData[Constants.ErrorOccurred] = false;
                         return RedirectToAction(nameof(Index));
@@ -195,32 +181,19 @@ namespace Mall.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!StoreExists(store.StoreId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    throw;
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["RoomId"] = new SelectList(_context.Room, "RoomId", "RoomId", store.RoomId);
+
+            ViewData["RoomId"] = new SelectList(roomList, "RoomId", "RoomId", store.RoomId);
             return View(store);
         }
 
         // GET: Stores/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public IActionResult Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var store = await _context.Store
-                .Include(s => s.RoomIdNavigation)
-                .FirstOrDefaultAsync(m => m.StoreId == id);
+            var store = _storeRepository.GetWithNavigation(id);
             if (store == null)
             {
                 return NotFound();
@@ -232,29 +205,23 @@ namespace Mall.Controllers
         // POST: Stores/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public IActionResult DeleteConfirmed(int id)
         {
-            var store = await _context.Store.FindAsync(id);
-            Room room = _context.Room.Where(m => m.RoomId == store.RoomId).FirstOrDefault();
+            var store = _storeRepository.Get(id);
+            var room = _roomRepository.Get(store.RoomId);
             room.IsAvailable = true;
 
-            _context.Update(room);
-            _context.Store.Remove(store);
-            await _context.SaveChangesAsync();
+            _roomRepository.Update(room);
+            _storeRepository.Delete(store);
             return RedirectToAction(nameof(Index));
         }
 
-        private bool StoreExists(int id)
+        private void PrepareDropdownListForRooms()
         {
-            return _context.Store.Any(e => e.StoreId == id);
-        }
-
-        private void PrepareDropdownListForRooms ()
-        {
-            var rooms = _context.Room
+            var rooms = roomList
                 .Where(c => c.IsAvailable == true)
                 .OrderBy(g => g.RoomId)
-                .Select(g => new { g.RoomId})
+                .Select(g => new { g.RoomId })
                 .ToList();
 
             ViewBag.RoomId = new SelectList(rooms, nameof(Room.RoomId), nameof(Room.RoomId));

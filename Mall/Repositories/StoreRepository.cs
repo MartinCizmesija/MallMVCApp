@@ -13,9 +13,42 @@ namespace Mall.Repositories
             _context = context;
         }
 
+        public Store Get(int? id)
+        {
+            return _context.Store.Where(x => x.StoreId== id).FirstOrDefault();
+        }
+
         public IQueryable<Store> GetList()
         {
             return _context.Store.AsNoTracking();
+        }
+
+        public Store GetWithNavigation(int? id)
+        {
+            if (id == null) return null;
+            //else return _context.Product.Where(x => x.ProductId == id).Include(p => p.StoreIdNavigation).FirstOrDefault();
+            else return _context.Store.Include(p => p.RoomIdNavigation).FirstOrDefault(x => x.StoreId == id);
+        }
+
+        public void Add(Store store)
+        {
+            _context.Add(store);
+            _context.SaveChanges();
+            return;
+        }
+
+        public bool Update(Store store)
+        {
+            if (store == null) return false;
+            _context.Update(store);
+            _context.SaveChanges();
+            return true;
+        }
+
+        public void Delete(Store store)
+        {
+            _context.Store.Remove(store);
+            _context.SaveChanges();
         }
     }
 }

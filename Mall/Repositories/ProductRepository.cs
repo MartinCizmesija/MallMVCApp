@@ -1,5 +1,6 @@
 ﻿using Mall.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Mall.Repositories
@@ -21,6 +22,11 @@ namespace Mall.Repositories
         public IQueryable<Product> GetList()
         {
             return _context.Product.AsNoTracking();
+        }
+
+        public List<Product> GetProductsOfStore(int? storeId)
+        {
+            return _context.Product.Where(m => m.StoreId == storeId).ToList();
         }
 
         public Product GetWithNavigation(int? id)

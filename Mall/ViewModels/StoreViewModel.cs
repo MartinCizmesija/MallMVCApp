@@ -5,7 +5,7 @@ using Mall.Models;
 
 namespace Mall.ViewModels
 {
-    public class StoresViewModel
+    public class StoreViewModel
     {
         public int StoreId { get; set; }
         public int RoomId { get; set; }

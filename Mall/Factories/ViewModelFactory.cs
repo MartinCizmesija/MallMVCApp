@@ -49,6 +49,27 @@ namespace Mall.Factories
             };
         }
 
+        public StoreViewModel CreateStore(Store store, List<Product> products)
+        {
+            return new StoreViewModel
+            {
+                StoreId = store.StoreId,
+                StoreName = store.StoreName,
+                StoreDescription = store.StoreDescription,
+                RentDebt = store.RentDebt,
+                Products = products
+            };
+        }
+
+        public StoresListVeiwModel CreateStoreList (List<StoreViewModel> stores, PagingInfo pagingInfo)
+        {
+            return new StoresListVeiwModel
+            {
+                Stores = stores,
+                PagingInfo = pagingInfo
+            };
+        }
+
 
     }
 }

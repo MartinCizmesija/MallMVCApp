@@ -8,7 +8,6 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace Mall.Controllers
 {
@@ -25,7 +24,7 @@ namespace Mall.Controllers
             _viewModelFactory = viewModelFactory;
         }
 
-        //GET: Stores
+        //GET: Rooms
         public IActionResult Index(string searchString, int page = 1, int sort = 1, bool ascending = true)
         {
             var query = _roomRepository.GetList();
@@ -93,7 +92,7 @@ namespace Mall.Controllers
             return View(model);
         }
 
-        // GET: Stores/Details/5
+        // GET: Rooms/Details/5
         public IActionResult Details(int? id)
         {
             if (id == null)
@@ -111,7 +110,7 @@ namespace Mall.Controllers
             return View(room);
         }
 
-        // GET: Stores/Create
+        // GET: Rooms/Create
         public IActionResult Create()
         {
             return View();
@@ -133,7 +132,7 @@ namespace Mall.Controllers
             return View(room);
         }
 
-        // GET: Stores/Edit/5
+        // GET: Rooms/Edit/5
         public IActionResult Edit(int? id)
         {
             var room = _roomRepository.Get(id);
@@ -174,7 +173,7 @@ namespace Mall.Controllers
             return View(room);
         }
 
-        // GET: Stores/Delete/5
+        // GET: Rooms/Delete/5
         public IActionResult Delete(int? id)
         {
             var room = _roomRepository.Get(id);
@@ -186,7 +185,7 @@ namespace Mall.Controllers
             return View(room);
         }
 
-        // POST: Stores/Delete/5
+        // POST: Rooms/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteConfirmed(int id)
