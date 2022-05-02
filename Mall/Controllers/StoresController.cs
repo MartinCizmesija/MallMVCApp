@@ -15,7 +15,6 @@ namespace Mall.Controllers
 {
     public class StoresController : Controller
     {
-        private readonly MallDbContext _contextt;
         private readonly RoomRepository _roomRepository;
         private readonly StoreRepository _storeRepository;
         private readonly ProductRepository _productRepository;
@@ -23,11 +22,10 @@ namespace Mall.Controllers
         private readonly AppSettings _appData;
 
         private IEnumerable<Room> roomList;
-        public StoresController(MallDbContext context, IOptionsSnapshot<AppSettings> options,
+        public StoresController(IOptionsSnapshot<AppSettings> options,
             StoreRepository storeRepository, ProductRepository productRepository,
             RoomRepository roomRepository, ViewModelFactory viewModelFactory)
         {
-            _contextt = context;
             _roomRepository = roomRepository;
             _storeRepository = storeRepository;
             _productRepository = productRepository;
