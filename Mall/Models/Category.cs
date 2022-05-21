@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Mall.ViewModels;
 
 namespace Mall.Models
 {

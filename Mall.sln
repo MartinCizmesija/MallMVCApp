@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31205.134
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32407.343
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mall", "Mall\Mall.csproj", "{36C68BDB-E9D9-413C-A17A-EE0F10F3BF9A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Mall", "Mall\Mall.csproj", "{36C68BDB-E9D9-413C-A17A-EE0F10F3BF9A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mall.Test", "Mall.Test\Mall.Test.csproj", "{3C79E9AC-3E94-4C8D-B558-FDB987CC9A89}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{36C68BDB-E9D9-413C-A17A-EE0F10F3BF9A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{36C68BDB-E9D9-413C-A17A-EE0F10F3BF9A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{36C68BDB-E9D9-413C-A17A-EE0F10F3BF9A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C79E9AC-3E94-4C8D-B558-FDB987CC9A89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C79E9AC-3E94-4C8D-B558-FDB987CC9A89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C79E9AC-3E94-4C8D-B558-FDB987CC9A89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C79E9AC-3E94-4C8D-B558-FDB987CC9A89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

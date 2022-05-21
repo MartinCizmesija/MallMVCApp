@@ -31,11 +31,11 @@ namespace Mall.Repositories
             return _context.Category.Where(c => c.Product_Category.Any(m => m.ProductId == id)).ToList();
         }
 
-        public void Add(Category category)
+        public Category Add(Category category)
         {
-            _context.Add(category);
+            var result = _context.Add(category);
             _context.SaveChanges();
-            return;
+            return result.Entity;
         }
 
         public bool Update (Category category)

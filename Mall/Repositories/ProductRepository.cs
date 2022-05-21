@@ -36,11 +36,11 @@ namespace Mall.Repositories
             else return _context.Product.Include(p => p.StoreIdNavigation).FirstOrDefault(x => x.ProductId == id);
         }
 
-        public void Add(Product product)
+        public Product Add(Product product)
         {
-            _context.Add(product);
+            var result = _context.Add(product);
             _context.SaveChanges();
-            return;
+            return result.Entity;
         }
 
         public bool Update(Product product)

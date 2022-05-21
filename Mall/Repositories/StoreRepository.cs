@@ -30,11 +30,11 @@ namespace Mall.Repositories
             else return _context.Store.Include(p => p.RoomIdNavigation).FirstOrDefault(x => x.StoreId == id);
         }
 
-        public void Add(Store store)
+        public Store Add(Store store)
         {
-            _context.Add(store);
+            var result = _context.Add(store);
             _context.SaveChanges();
-            return;
+            return result.Entity;
         }
 
         public bool Update(Store store)

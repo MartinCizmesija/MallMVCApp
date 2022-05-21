@@ -18,5 +18,12 @@ namespace Mall.Repositories
             else return  _context.Mall.Where(s => s.MallId == id).FirstOrDefault();
         }
 
+        public MallCenter Add(MallCenter mall)
+        {
+            var result = _context.Add(mall);
+            _context.SaveChanges();
+            return result.Entity;
+        }
+
     }
 }

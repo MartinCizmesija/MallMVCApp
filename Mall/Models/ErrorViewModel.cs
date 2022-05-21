@@ -1,5 +1,3 @@
-using System;
-
 namespace Mall.Models
 {
     public class ErrorViewModel

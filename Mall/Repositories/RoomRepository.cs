@@ -23,11 +23,11 @@ namespace Mall.Repositories
             return _context.Room.AsNoTracking();
         }
 
-        public void Add(Room room)
+        public Room Add(Room room)
         {
-            _context.Add(room);
+            var result = _context.Add(room);
             _context.SaveChanges();
-            return;
+            return result.Entity;
         }
 
         public bool Update(Room room)
