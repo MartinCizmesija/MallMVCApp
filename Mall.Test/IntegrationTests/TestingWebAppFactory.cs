@@ -1,18 +1,17 @@
-﻿namespace Mall.Test
-{
-    using System;
-    using System.Linq;
-    using Microsoft.AspNetCore.Hosting;
-    using Microsoft.AspNetCore.Mvc.Testing;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.Extensions.DependencyInjection;
-    using Microsoft.Extensions.Logging;
-    using Mall.Models;
+﻿using System;
+using System.Linq;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-    namespace RazorPagesProject.Tests
+namespace Mall.Test
+{
+    namespace IntegrationTests
     {
         #region snippet1
-        public class CustomWebApplicationFactory<TStartup>
+        public class TestingWebApplicationFactory<TStartup>
             : WebApplicationFactory<TStartup> where TStartup : class
         {
             protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -21,13 +20,19 @@
                 {
                     var descriptor = services.SingleOrDefault(
                         d => d.ServiceType ==
-                            typeof(DbContextOptions<MallDbContext>));
+                            typeof(DbContextOptions<DbContext>));
 
                     services.Remove(descriptor);
 
-                    services.AddDbContext<MallDbContext>(options =>
+                    services.AddDbContext<DbContext>(options =>
                     {
                         options.UseInMemoryDatabase("InMemoryDbForTesting");
+                    });
+
+                    services.AddAntiforgery(t =>
+                    {
+                        t.Cookie.Name = AntiForgeryTokenExtractor.AntiForgeryCookieName;
+                        t.FormFieldName = AntiForgeryTokenExtractor.AntiForgeryFieldName;
                     });
 
                     var sp = services.BuildServiceProvider();
@@ -35,9 +40,9 @@
                     using (var scope = sp.CreateScope())
                     {
                         var scopedServices = scope.ServiceProvider;
-                        var db = scopedServices.GetRequiredService<MallDbContext>();
+                        var db = scopedServices.GetRequiredService<DbContext>();
                         var logger = scopedServices
-                            .GetRequiredService<ILogger<CustomWebApplicationFactory<TStartup>>>();
+                            .GetRequiredService<ILogger<TestingWebApplicationFactory<TStartup>>>();
 
                         db.Database.EnsureCreated();
                     }
